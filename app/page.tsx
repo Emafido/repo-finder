@@ -6,6 +6,7 @@ import { Map, SearchX, RotateCcw, Menu, Star, GitFork, CircleDot, Github, X, Tel
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
 import confetti from "canvas-confetti";
+import { getGithubRepo } from "./action"; 
 
 interface RepoData {
   name: string;
@@ -20,6 +21,7 @@ export default function Home() {
   const [width, setWidth] = useState<number>(0);
   const [language, setLanguage] = useState<string>("");
   const [repository, setRepository] = useState<RepoData | null>(null);
+  const [repoPool, setRepoPool] = useState<RepoData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
@@ -31,6 +33,11 @@ export default function Home() {
       return () => window.removeEventListener("resize", handleResize);
     }
   }, []);
+
+  // Reset the pool if the user changes the language they are searching for
+  useEffect(() => {
+    setRepoPool([]);
+  }, [language]);
 
   const triggerConfetti = () => {
     confetti({
@@ -54,57 +61,79 @@ export default function Home() {
       return;
     }
 
+    // CRACKED LOGIC: Check local pool before hitting the server
+    if (repoPool.length > 0) {
+      const randomIndex = Math.floor(Math.random() * repoPool.length);
+      const selectedRepo = repoPool[randomIndex];
+      
+      // Remove selected repo from the pool so we don't show it twice
+      const newPool = repoPool.filter((_, index) => index !== randomIndex);
+      
+      setRepository(selectedRepo);
+      setRepoPool(newPool);
+      triggerConfetti();
+
+      // Telemetry update for local pull
+      const currentSearches = localStorage.getItem("repoFinderSearches");
+      const newCount = currentSearches ? parseInt(currentSearches, 10) + 1 : 1;
+      localStorage.setItem("repoFinderSearches", newCount.toString());
+      return;
+    }
+
+    // If pool is empty, hit the server
     setLoading(true);
 
-    try {
-      const response = await fetch(`https://api.github.com/search/repositories?q=language:${language}&sort=stars&per_page=30`);
-      const data = await response.json();
-      const repos = data.items;
+    // Call the Server Action
+    const result = await getGithubRepo(language);
 
-      if (!repos || repos.length === 0) {
-        Swal.fire({
-          title: "Not Found",
-          text: "No repositories found for this language.",
-          icon: "error",
-          background: "#18181b",
-          color: "#f4f4f5",
-          confirmButtonColor: "#ef4444"
-        });
-        setLoading(false);
-        return;
-      }
+    if (result.error) {
+      const messages: Record<string, string> = {
+        RATE_LIMIT: "System Cooldown: GitHub is rate-limiting the server. Wait a minute!",
+        FETCH_ERROR: "GitHub API returned an error. Check the language name.",
+        SERVER_ERROR: "Failed to establish uplink with server."
+      };
+      
+      Swal.fire({ 
+        title: "Error", 
+        text: messages[result.error as string] || "Something went wrong.", 
+        icon: "error", 
+        background: "#18181b", 
+        color: "#f4f4f5" 
+      });
+      setLoading(false);
+      return;
+    }
 
-      const randomRepo = repos[Math.floor(Math.random() * repos.length)];
+    const repos = result.data;
 
-      if (randomRepo) {
-        setRepository({
-          name: randomRepo.name,
-          description: randomRepo.description,
-          stargazers_count: randomRepo.stargazers_count,
-          forks_count: randomRepo.forks_count,
-          open_issues_count: randomRepo.open_issues_count,
-          html_url: randomRepo.html_url
-        });
-        triggerConfetti();
-
-        // TELEMETRY: Increment the local storage search counter
-        const currentSearches = localStorage.getItem("repoFinderSearches");
-        const newCount = currentSearches ? parseInt(currentSearches, 10) + 1 : 1;
-        localStorage.setItem("repoFinderSearches", newCount.toString());
-      }
-    } catch (error) {
-      console.error(error);
+    if (!repos || repos.length === 0) {
       Swal.fire({
-        title: "Network Error",
-        text: "Failed to connect to GitHub.",
+        title: "Not Found",
+        text: "No repositories found for this language.",
         icon: "error",
         background: "#18181b",
         color: "#f4f4f5",
         confirmButtonColor: "#ef4444"
       });
-    } finally {
       setLoading(false);
+      return;
     }
+
+    // Pick a random repo for immediate display, save the rest to the pool
+    const randomIndex = Math.floor(Math.random() * repos.length);
+    const selectedRepo = repos[randomIndex];
+    
+    setRepository(selectedRepo);
+    setRepoPool(repos.filter((_, index) => index !== randomIndex));
+    
+    triggerConfetti();
+
+    // TELEMETRY: Increment the local storage search counter
+    const currentSearches = localStorage.getItem("repoFinderSearches");
+    const newCount = currentSearches ? parseInt(currentSearches, 10) + 1 : 1;
+    localStorage.setItem("repoFinderSearches", newCount.toString());
+    
+    setLoading(false);
   };
 
   return (

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
-import { Map, SearchX, RotateCcw, Menu, Star, GitFork, CircleDot, Github, X } from "lucide-react";
+import { Map, SearchX, RotateCcw, Menu, Star, GitFork, CircleDot, Github, X, Telescope } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
 import confetti from "canvas-confetti";
@@ -37,7 +37,7 @@ export default function Home() {
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#6366f1', '#a855f7', '#3b82f6'] // Toned down, sleek colors
+      colors: ['#6366f1', '#a855f7', '#3b82f6']
     });
   };
 
@@ -86,6 +86,11 @@ export default function Home() {
           html_url: randomRepo.html_url
         });
         triggerConfetti();
+
+        // TELEMETRY: Increment the local storage search counter
+        const currentSearches = localStorage.getItem("repoFinderSearches");
+        const newCount = currentSearches ? parseInt(currentSearches, 10) + 1 : 1;
+        localStorage.setItem("repoFinderSearches", newCount.toString());
       }
     } catch (error) {
       console.error(error);
@@ -110,15 +115,19 @@ export default function Home() {
             {width < 768 ? (
               <>
                 <div className="border-b border-zinc-800 flex justify-between items-center px-4 sm:px-6 py-4 bg-zinc-900/90 backdrop-blur-md relative z-50">
-                  <Link href="/" className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-indigo-500">
-                    RepoFinder
+                  <Link href="/" className="flex items-center gap-2 group">
+                    <div className="bg-indigo-500/10 p-1.5 rounded-lg border border-indigo-500/20 group-hover:scale-110 transition-transform">
+                      <Telescope className="text-indigo-400" size={20} />
+                    </div>
+                    <span className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-indigo-500">
+                      RepoFinder
+                    </span>
                   </Link>
-                  <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1">
+                  <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 cursor-pointer">
                     {isMobileMenuOpen ? <X className="text-zinc-300" /> : <Menu className="text-zinc-300" />}
                   </button>
                 </div>
                 
-                {/* Mobile Dropdown */}
                 <AnimatePresence>
                   {isMobileMenuOpen && (
                     <motion.div
@@ -148,8 +157,13 @@ export default function Home() {
               </>
             ) : (
               <div className="border-b border-zinc-800 flex justify-between items-center px-4 sm:px-6 py-4 bg-zinc-900/50 backdrop-blur-md">
-                <Link href="/" className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-indigo-500">
-                  RepoFinder
+                <Link href="/" className="flex items-center gap-2 group">
+                  <div className="bg-indigo-500/10 p-2 rounded-xl border border-indigo-500/20 group-hover:scale-110 transition-transform">
+                    <Telescope className="text-indigo-400" size={24} />
+                  </div>
+                  <span className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-indigo-500">
+                    RepoFinder
+                  </span>
                 </Link>
                 <div className="flex gap-2 sm:gap-6 flex-wrap items-center">
                   <Link href="/docs" className="hover:text-indigo-400 transition-colors duration-200 cursor-pointer font-medium text-sm text-zinc-300">

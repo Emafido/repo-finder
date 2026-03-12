@@ -25,11 +25,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "RepoFinder | Random GitHub Repository Generator",
     description: "Bypass search fatigue. Find your next open-source contribution with a single click.",
-    url: "https://repofinder.vercel.app", // You can update this once deployed
+    url: "https://open-source-finder-drab.vercel.app/", 
     siteName: "RepoFinder",
     images: [
       {
-        url: "/home.png", // Pulls directly from your public folder
+        url: "/home.png", 
         width: 1200,
         height: 630,
         alt: "RepoFinder Dashboard Preview",
@@ -43,6 +43,9 @@ export const metadata: Metadata = {
     title: "RepoFinder | Discover Your Next Open Source Contribution",
     description: "A high-speed discovery engine for GitHub repositories.",
     images: ["/home.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
   },
 };
 

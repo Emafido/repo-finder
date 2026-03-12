@@ -34,11 +34,6 @@ export default function Home() {
     }
   }, []);
 
-  // Reset the pool if the user changes the language they are searching for
-  useEffect(() => {
-    setRepoPool([]);
-  }, [language]);
-
   const triggerConfetti = () => {
     confetti({
       particleCount: 100,
@@ -66,24 +61,21 @@ export default function Home() {
       const randomIndex = Math.floor(Math.random() * repoPool.length);
       const selectedRepo = repoPool[randomIndex];
       
-      // Remove selected repo from the pool so we don't show it twice
-      const newPool = repoPool.filter((_, index) => index !== randomIndex);
+      // FIX: Added explicit TypeScript types to the filter parameters
+      const newPool = repoPool.filter((_: RepoData, index: number) => index !== randomIndex);
       
       setRepository(selectedRepo);
       setRepoPool(newPool);
       triggerConfetti();
 
-      // Telemetry update for local pull
       const currentSearches = localStorage.getItem("repoFinderSearches");
       const newCount = currentSearches ? parseInt(currentSearches, 10) + 1 : 1;
       localStorage.setItem("repoFinderSearches", newCount.toString());
       return;
     }
 
-    // If pool is empty, hit the server
     setLoading(true);
 
-    // Call the Server Action
     const result = await getGithubRepo(language);
 
     if (result.error) {
@@ -104,7 +96,8 @@ export default function Home() {
       return;
     }
 
-    const repos = result.data;
+    // FIX: Explicitly tell TypeScript that repos is an array of RepoData
+    const repos: RepoData[] = result.data;
 
     if (!repos || repos.length === 0) {
       Swal.fire({
@@ -119,16 +112,16 @@ export default function Home() {
       return;
     }
 
-    // Pick a random repo for immediate display, save the rest to the pool
     const randomIndex = Math.floor(Math.random() * repos.length);
     const selectedRepo = repos[randomIndex];
     
     setRepository(selectedRepo);
-    setRepoPool(repos.filter((_, index) => index !== randomIndex));
+    
+    // FIX: Added explicit TypeScript types here as well
+    setRepoPool(repos.filter((_: RepoData, index: number) => index !== randomIndex));
     
     triggerConfetti();
 
-    // TELEMETRY: Increment the local storage search counter
     const currentSearches = localStorage.getItem("repoFinderSearches");
     const newCount = currentSearches ? parseInt(currentSearches, 10) + 1 : 1;
     localStorage.setItem("repoFinderSearches", newCount.toString());
@@ -242,7 +235,11 @@ export default function Home() {
             type="text"
             id="language"
             value={language}
-            onChange={(e) => setLanguage(e.target.value)}
+            onChange={(e) => {
+              // FIX: Replaced the bad useEffect with this clean, synchronous state reset
+              setLanguage(e.target.value);
+              setRepoPool([]); 
+            }}
             className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3.5 px-5 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-inner text-sm font-medium"
             placeholder="e.g. JavaScript, Go, Python"
           />

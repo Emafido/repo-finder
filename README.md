@@ -80,7 +80,7 @@ We warmly welcome contributions to optimize RepoFinder! Please ensure your code 
 
 🚀 Submit a Pull Request: Push your branch to origin and open a PR against the main branch with a concise description of your upgrades.
 
-Author: Emafido Emmanuel Aridon
+Author: Emafido Emmanuel Aridon <br>
 Live Link : open-source-finder-drab.vercel.app
 
 GitHub: @Emafido
